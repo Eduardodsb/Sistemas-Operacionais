@@ -8,75 +8,95 @@ DRE: 116150432
 compilação: gcc -o Trab1 Trab1.c -ansi -Wall
 */
 
+/*Bibliotecas*/
 #include<stdlib.h>
 #include<stdio.h>
 #include <stdbool.h>
 
 /*Estruturas*/
-typedef struct processo{ /*Estrutura que define um processo*/
-int id, prioridade;
-float temp_ingresso; /*Tempo de ingresso*/
-float temp_exec; /*Tempo necessário para rodar o processo*/
-float temp_inicio_exec; /*Tempo em que a execução começa*/
-float temp_fim_exec; /*Tempo final da execução*/
-float temp_run; /*Tempo que o código já rodou*/
-bool executado;
+typedef struct processo{ /*Estrutura que define um processo.*/
+    int id, prioridade; /*ID e prioridade estática do processo*/
+    int prioridade_dinamica; /*Prioridade dinâmica do processo*/
+    float temp_ingresso; /*Tempo de ingresso*/
+    float temp_exec; /*Tempo necessário para a execução do processo*/
+    float temp_inicio_exec; /*Tempo em que o processo começou a ser executado*/
+    float temp_fim_exec; /*Tempo em que o processo parou de ser executado*/
+    float temp_run; /*Tempo que o código já rodou*/
+    bool executado; /*Define se o processo já terminou ou não de ser executado*/
 } processo;
 
 
-typedef struct escalonamento{ /*Estrutura que define informações sobre um tipo de escalonamento*/
-int trocas_Contexto;
-float Tt, Tw, tempo_Total;
+typedef struct escalonamento{ /*Estrutura que define informações sobre um tipo de escalonamento.*/
+    int trocas_Contexto;
+    float Tt, Tw, tempo_Total;
 } escalonamento;
 
 
 /*Potótipos*/
-processo* leituraDeDados(); 
-void inicializaEscalonamentos(escalonamento *escalonadores);
-void imprimeProcessos(processo *processos, int N_processos);
-void resetProcessos(processo *processos, int N_processos);
+processo* leituraDeDados(); /*Faz a leitura dos dados do arquivo de entrada e cria um array com todos os processos.*/
+void imprimeProcessos(processo *processos, int N_processos); /*Imprime a tabela dos processos criados, informando o ingresso, duração e prioridade.*/
+void resetProcessos(processo *processos, int N_processos); /*Reseta as variáveis de todos os processos. OBS: as variáveis com informação lida do arquivo de entrada é mantida.*/
+bool existeTrabalho(processo *processos, int N_processos); /*Verifica se ainda existe processo que não tenha sido executado*/
+void inicializaEscalonamentos(escalonamento *escalonadores); /*Inicializa a estrutura que define cada tipo de escalonamento.*/
+void imprimeEscalonamentos(escalonamento *escalonadores); /*Imprime o resultado de todos os tipos de escalonamentos.*/
 
-int menorTemp_ingresso(processo *processos, int N_processos); /*DELETAR*/
-
-
-void inicializarFila(int *fila, int tam);
-void incluirFila(int *fila, int tam, int processo);
-void removerFila(int *fila, int tam);
-void atualizarFila(processo *Processos, int *fila, int tam, int temp);
-bool pertencerFila(int *fila, int tam, int processo);
-void ordenarFila_menorTempExec(int *fila, int tam, processo *processos);
-void ordenarFila_menorTempExecRestante(int *fila, int tam, processo *processos);
+void inicializarFila(int *fila, int tam); /*Inicializa a fila que guardará a ordem dos processos com -1.*/
+void incluirFila(int *fila, int tam, int processo); /*Inclui o processo no final da fila.*/
+void removerFila(int *fila, int tam); /*Remove o primeiro processo da fila.*/
+void atualizarFila(processo *Processos, int *fila, int tam, int temp); /*Atualiza a fila com todos os processos que tenha surgido e não executado até o tempo temp. OBS: Todos os processos são incluidos no final da fila.*/ 
+bool pertencerFila(int *fila, int tam, int processo); /*Verifica se um processo já pertence a fila.*/
+void ordenarFila_menorTempExec(int *fila, int tam, processo *processos); /*Ordena os processos da fila pelo tempo de execução (Do menor para o maior).*/
+void ordenarFila_menorTempExecRestante(int *fila, int tam, processo *processos); /*Ordena os processos da fila pelo tempo restante de execução (Do menor para o maior).*/
+void ordenarFila_maiorPrioridade(int *fila, int N_processos, processo *processos); /*Ordena os processos da fila pela ordem de prioridade (Da maior pra a menor).*/
 
 void escalonamento_FCFS(processo *processos, int N_processos, escalonamento *escalonador);
 void escalonamento_RR(processo *processos, int N_processos, escalonamento *escalonador);
 void escalonamento_SJF(processo *processos, int N_processos, escalonamento *escalonador);
 void escalonamento_SRTF(processo *processos, int N_processos, escalonamento *escalonador);
+void escalonamento_PRIOc(processo *processos, int N_processos, escalonamento *escalonador);
+void escalonamento_PRIOp(processo *processos, int N_processos, escalonamento *escalonador);
+void escalonamento_PRIOd(processo *processos, int N_processos, escalonamento *escalonador);
 
 /*Variáveis Globais*/
 int total_Processos;
+int total_Escalonamentos = 7;
 
-
+/*Main*/
 int main(int argc, char **argv){
     processo *processos;
-    escalonamento escalonadores[7];
+    escalonamento escalonadores[total_Escalonamentos];
 
     processos = leituraDeDados();
     inicializaEscalonamentos(escalonadores);
-
+    
+    resetProcessos(processos, total_Processos);
     escalonamento_FCFS(processos, total_Processos, &escalonadores[0]);
+    
     resetProcessos(processos, total_Processos);
-    printf("\n");
     escalonamento_RR(processos, total_Processos, &escalonadores[1]);
+    
     resetProcessos(processos, total_Processos);
-    printf("\n");
     escalonamento_SJF(processos, total_Processos, &escalonadores[2]);
+    
     resetProcessos(processos, total_Processos);
-    printf("\n");
     escalonamento_SRTF(processos, total_Processos, &escalonadores[3]);
+    
+    resetProcessos(processos, total_Processos);
+    escalonamento_PRIOc(processos, total_Processos, &escalonadores[4]);
+    
+    resetProcessos(processos, total_Processos);
+    escalonamento_PRIOp(processos, total_Processos, &escalonadores[5]);
+    
+    resetProcessos(processos, total_Processos);
+    escalonamento_PRIOd(processos, total_Processos, &escalonadores[6]);
+
+    imprimeEscalonamentos(escalonadores);
+
     return 0;
 }
 
-processo* leituraDeDados(){ /*Leitura da entrada e inicialização da estrutura de processos*/
+/*Funções*/
+processo* leituraDeDados(){
     processo *processos;
     int counter, N_processos, i;
 
@@ -96,7 +116,6 @@ processo* leituraDeDados(){ /*Leitura da entrada e inicialização da estrutura 
 
     for(i = 0; i < N_processos; i++){
         processos[i].id = i;
-        processos[i].executado = false;
         fscanf (file, "%f", &processos[i].temp_ingresso);
     }
 
@@ -115,30 +134,34 @@ processo* leituraDeDados(){ /*Leitura da entrada e inicialização da estrutura 
     return processos;
 }
 
-void inicializaEscalonamentos(escalonamento *escalonadores){
+void imprimeProcessos(processo *processos, int N_processos){
     int i;
-    for(i = 0; i<4; i++){
-        escalonadores[i].tempo_Total = 0;
-        escalonadores[i].Tt = 0;
-        escalonadores[i].Tw = 0;
-        escalonadores[i].trocas_Contexto = 0;
-    }
-}
-
-void imprimeProcessos(processo *processos, int N_processos){ /*Imprime os processos criados*/
-    int i;
-    for(i = 0; i < N_processos; i++){
-        printf("%d ", (int) processos[i].temp_ingresso);
+    printf("            ");
+    for(i = 0; i<N_processos; i++){
+        printf("P%d ", i+1);
     }
     printf("\n");
     for(i = 0; i < N_processos; i++){
-        printf("%d ", (int) processos[i].temp_exec);
+        if(i == 0){
+          printf("Ingresso    ");  
+        }
+        printf("%d  ", (int) processos[i].temp_ingresso);
     }
     printf("\n");
     for(i = 0; i < N_processos; i++){
-        printf("%d ", processos[i].prioridade);
+        if(i == 0){
+          printf("Duração     ");  
+        }
+        printf("%d  ", (int) processos[i].temp_exec);
     }
     printf("\n");
+    for(i = 0; i < N_processos; i++){
+        if(i == 0){
+          printf("Prioridade  ");  
+        }
+        printf("%d  ", processos[i].prioridade);
+    }
+    printf("\n\n");
 }
 
 void resetProcessos(processo *processos, int N_processos){
@@ -148,24 +171,40 @@ void resetProcessos(processo *processos, int N_processos){
         processos[i].temp_inicio_exec = -1;
         processos[i].temp_fim_exec = -1;
         processos[i].temp_run = 0;
+        processos[i].prioridade_dinamica = 0;
     }
 }
 
-/*Morrer 0 referência*/
-int menorIngresso_Id(processo *processos, int N_processos){ /*Retorna o ID do processo com menor tempo de ingresso e que não tenha  sido executado. No caso de empate o que tiver o menor id*/
-    int i, menorTemp_ingresso = 0;
-
-    while(processos[menorTemp_ingresso].executado){
-        menorTemp_ingresso++;
+bool existeTrabalho(processo *processos, int N_processos){
+    int i;
+    for(i = 0; i < N_processos; i++){
+        if(processos[i].executado == false)
+            return true;
     }
-
-    for(i = menorTemp_ingresso + 1; i < N_processos; i++){
-        if((processos[i].temp_ingresso < processos[menorTemp_ingresso].temp_ingresso) && (!processos[i].executado)){
-            menorTemp_ingresso = i;
-        }
-    }
-    return menorTemp_ingresso;
+    return false;
 }
+
+void inicializaEscalonamentos(escalonamento *escalonadores){
+    int i;
+    for(i = 0; i<total_Escalonamentos; i++){
+        escalonadores[i].tempo_Total = 0;
+        escalonadores[i].Tt = 0;
+        escalonadores[i].Tw = 0;
+        escalonadores[i].trocas_Contexto = 0;
+    }
+}
+
+void imprimeEscalonamentos(escalonamento *escalonadores){
+    int i;
+    for(i=0; i < total_Escalonamentos; i++){
+        printf("Tempo médio Tt = %f\n",  escalonadores[i].Tt );
+        printf("Tempo médio Tw = %f\n",  escalonadores[i].Tw);
+        printf("Trocas de contexto = %d\n", escalonadores[i].trocas_Contexto);
+        printf("Tempo total = %f\n", escalonadores[i].tempo_Total);
+        printf("\n");
+    }
+}
+
 
 void inicializarFila(int *fila, int tam){
     int i;
@@ -182,12 +221,21 @@ void incluirFila(int *fila, int tam, int processo){
     fila[i] = processo;
 }
 
-void removerFila(int *fila, int tam){ /*Remove o primeiro da fila e shifta a fila*/
+void removerFila(int *fila, int tam){
     int i;
     for(i = 0; i<tam-1; i++){
         fila[i] = fila[i+1];
     }
     fila[tam-1] = -1;
+}
+
+void atualizarFila(processo *processos, int *fila, int tam, int temp){  
+    int i;
+    for(i = 0; i<tam; i++){
+        if(processos[i].temp_ingresso <= temp && !pertencerFila(fila, tam, i) && !processos[i].executado){
+            incluirFila(fila, tam, i);
+        }
+    }
 }
 
 bool pertencerFila(int *fila, int tam, int processo){
@@ -200,16 +248,7 @@ bool pertencerFila(int *fila, int tam, int processo){
     return false;
 }
 
-void atualizarFila(processo *processos, int *fila, int tam, int temp){ /*Atualiza a fila com todos os processos que tenha surgido e não executado até o tempo temp*/ 
-    int i;
-    for(i = 0; i<tam; i++){
-        if(processos[i].temp_ingresso <= temp && !pertencerFila(fila, tam, i) && !processos[i].executado){
-            incluirFila(fila, tam, i);
-        }
-    }
-}
-
-void ordenarFila_menorTempExec(int *fila, int tam, processo *processos){ /*Ordena os processos da fila pelo tempo de execução*/
+void ordenarFila_menorTempExec(int *fila, int tam, processo *processos){ 
     int i, j, temp, numProcessos = 0;
     while(fila[numProcessos] != -1){
         numProcessos++;
@@ -227,7 +266,7 @@ void ordenarFila_menorTempExec(int *fila, int tam, processo *processos){ /*Orden
 
 }
 
-void ordenarFila_menorTempExecRestante(int *fila, int tam, processo *processos){/*Ordena os processos da fila pelo tempo restante de execução*/
+void ordenarFila_menorTempExecRestante(int *fila, int tam, processo *processos){ 
     int i, j, temp, numProcessos = 0;
     while(fila[numProcessos] != -1){
         numProcessos++;
@@ -244,6 +283,24 @@ void ordenarFila_menorTempExecRestante(int *fila, int tam, processo *processos){
     }
 }
 
+void ordenarFila_maiorPrioridade(int *fila, int N_processos, processo *processos){ 
+    int i, j, temp, numProcessos = 0;
+    while(fila[numProcessos] != -1){
+        numProcessos++;
+    }
+
+    for(i=0; i<numProcessos-1; i++){
+        for(j=0; j<numProcessos-i-1; j++){
+            if(processos[fila[j]].prioridade < processos[fila[j+1]].prioridade){
+                temp = fila[j];
+                fila[j] = fila[j+1];
+                fila[j+1] = temp;
+            }
+        }
+    }
+}
+
+
 void escalonamento_FCFS(processo *processos, int N_processos, escalonamento *escalonador){
     int prox_processo;
     int fila[N_processos];
@@ -251,9 +308,8 @@ void escalonamento_FCFS(processo *processos, int N_processos, escalonamento *esc
     inicializarFila(fila, N_processos);
     atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
 
-    while(fila[0] != -1){ /*tempo_total é usado também como uma linha do tempo*/
-        /*prox_processo = menorIngresso_Id(processos,N_processos);*/
-        atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
+    while(fila[0] != -1 && existeTrabalho(processos,N_processos)){ /*Enquanto a fila não estiver vázia e ainda existir processos para ser realizado.*/
+        atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total); /*tempo_total é usado também como uma linha do tempo.*/
         prox_processo = fila[0];
 
         processos[prox_processo].temp_inicio_exec = (*escalonador).tempo_Total;
@@ -270,10 +326,6 @@ void escalonamento_FCFS(processo *processos, int N_processos, escalonamento *esc
     (*escalonador).Tw = (*escalonador).Tw/N_processos;
     (*escalonador).trocas_Contexto = N_processos - 1;
 
-    printf("Tempo médio Tt = %f\n", (*escalonador).Tt);
-    printf("Tempo médio Tw = %f\n", (*escalonador).Tw);
-    printf("Trocas de contexto = %d\n", (*escalonador).trocas_Contexto);
-    printf("Tempo total = %f\n", (*escalonador).tempo_Total);
 }
 
 void escalonamento_RR(processo *processos, int N_processos, escalonamento *escalonador){
@@ -284,8 +336,8 @@ void escalonamento_RR(processo *processos, int N_processos, escalonamento *escal
     inicializarFila(fila, N_processos);
     atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
 
-    while(fila[0] != -1){ /*Enquanto a fila não estiver vázia*/
-        atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
+    while(fila[0] != -1  && existeTrabalho(processos,N_processos)){ /*Enquanto a fila não estiver vázia e ainda existir processos para ser realizado.*/
+        atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total); /*tempo_total é usado também como uma linha do tempo.*/
         prox_processo = fila[0];
        /* printf("cara da fila = %d\n", fila[0]);*/
         if(processos[prox_processo].temp_inicio_exec == -1){
@@ -301,7 +353,6 @@ void escalonamento_RR(processo *processos, int N_processos, escalonamento *escal
             (*escalonador).Tw += processos[prox_processo].temp_fim_exec - processos[prox_processo].temp_ingresso - processos[prox_processo].temp_exec;
             (*escalonador).trocas_Contexto++;
             removerFila(fila, N_processos);
-            /*SAI DA FILA - TERMINOU*/
         }else{
             processos[prox_processo].temp_run += tq;
             (*escalonador).tempo_Total += tq;
@@ -309,19 +360,13 @@ void escalonamento_RR(processo *processos, int N_processos, escalonamento *escal
             atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
             removerFila(fila, N_processos);
             incluirFila(fila, N_processos, prox_processo);
-            /*VAI PARA O FIM DA FILA*/
         }
         
     }
 
     (*escalonador).Tt = (*escalonador).Tt/N_processos;
     (*escalonador).Tw = (*escalonador).Tw/N_processos;
-    (*escalonador).trocas_Contexto--;    
-
-    printf("Tempo médio Tt = %f\n", (*escalonador).Tt);
-    printf("Tempo médio Tw = %f\n", (*escalonador).Tw);
-    printf("Trocas de contexto = %d\n", (*escalonador).trocas_Contexto);
-    printf("Tempo total = %f\n", (*escalonador).tempo_Total);
+    (*escalonador).trocas_Contexto--; /*Compensar a saída do último processo que não é considerada uma troca de contexto.*/   
 
 }
 
@@ -333,8 +378,8 @@ void escalonamento_SJF(processo *processos, int N_processos, escalonamento *esca
     atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
     ordenarFila_menorTempExec(fila, N_processos, processos);
 
-    while(fila[0] != -1){ /*Enquanto a fila não estiver vázia*/
-        atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
+    while(fila[0] != -1  && existeTrabalho(processos,N_processos)){ /*Enquanto a fila não estiver vázia e ainda existir processos para ser realizado.*/
+        atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total); /*tempo_total é usado também como uma linha do tempo.*/
         ordenarFila_menorTempExec(fila, N_processos, processos);
         prox_processo = fila[0];
        
@@ -354,26 +399,24 @@ void escalonamento_SJF(processo *processos, int N_processos, escalonamento *esca
 
     (*escalonador).Tt = (*escalonador).Tt/N_processos;
     (*escalonador).Tw = (*escalonador).Tw/N_processos;
-    (*escalonador).trocas_Contexto--;    
-
-    printf("Tempo médio Tt = %f\n", (*escalonador).Tt);
-    printf("Tempo médio Tw = %f\n", (*escalonador).Tw);
-    printf("Trocas de contexto = %d\n", (*escalonador).trocas_Contexto);
-    printf("Tempo total = %f\n", (*escalonador).tempo_Total);
+    (*escalonador).trocas_Contexto--; /*Compensar a saída do último processo que não é considerada uma troca de contexto.*/    
 }
 
 void escalonamento_SRTF(processo *processos, int N_processos, escalonamento *escalonador){
-    int prox_processo, fila[N_processos];
+    int prox_processo = -1 , fila[N_processos];
 
     inicializarFila(fila, N_processos);
     atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
     ordenarFila_menorTempExecRestante(fila, N_processos, processos);
 
-    while(fila[0] != -1){
+    while(fila[0] != -1  && existeTrabalho(processos,N_processos)){
         atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
         ordenarFila_menorTempExecRestante(fila, N_processos, processos);
+        if(fila[0] != prox_processo && prox_processo != -1){
+            (*escalonador).trocas_Contexto++;
+        }
         prox_processo = fila[0];
-        
+
         if(processos[prox_processo].temp_inicio_exec == -1){
             processos[prox_processo].temp_inicio_exec = (*escalonador).tempo_Total;
         }
@@ -392,18 +435,86 @@ void escalonamento_SRTF(processo *processos, int N_processos, escalonamento *esc
             (*escalonador).tempo_Total ++;
         }
 
-        if(fila[0] != prox_processo){
-            (*escalonador).trocas_Contexto++;
-        }
+    }
+
+    (*escalonador).Tt = (*escalonador).Tt/N_processos;
+    (*escalonador).Tw = (*escalonador).Tw/N_processos;
+
+}
+
+void escalonamento_PRIOc(processo *processos, int N_processos, escalonamento *escalonador){
+    int prox_processo, fila[N_processos];
+
+    inicializarFila(fila, N_processos);
+    atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
+    ordenarFila_maiorPrioridade(fila, N_processos, processos);
+
+    while(fila[0] != -1  && existeTrabalho(processos,N_processos)){
+        atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
+        ordenarFila_maiorPrioridade(fila, N_processos, processos);
+        prox_processo = fila[0];
+        
+        processos[prox_processo].temp_inicio_exec = (*escalonador).tempo_Total;  
+        processos[prox_processo].temp_fim_exec = processos[prox_processo].temp_inicio_exec + processos[prox_processo].temp_exec;
+
+        (*escalonador).Tt += processos[prox_processo].temp_fim_exec - processos[prox_processo].temp_ingresso;
+        (*escalonador).Tw += processos[prox_processo].temp_inicio_exec - processos[prox_processo].temp_ingresso;
+        (*escalonador).tempo_Total += processos[prox_processo].temp_exec;
+        (*escalonador).trocas_Contexto++; 
+        processos[prox_processo].executado = true;
+        removerFila(fila, N_processos);
 
     }
 
     (*escalonador).Tt = (*escalonador).Tt/N_processos;
     (*escalonador).Tw = (*escalonador).Tw/N_processos;  
+    (*escalonador).trocas_Contexto--; /*Compensar a saída do último processo que não é considerada uma troca de contexto.*/
 
-    printf("Tempo médio Tt = %f\n", (*escalonador).Tt);
-    printf("Tempo médio Tw = %f\n", (*escalonador).Tw);
-    printf("Trocas de contexto = %d\n", (*escalonador).trocas_Contexto);
-    printf("Tempo total = %f\n", (*escalonador).tempo_Total);
+}
+
+void escalonamento_PRIOp(processo *processos, int N_processos, escalonamento *escalonador){
+    int prox_processo = -1, fila[N_processos];
+
+    inicializarFila(fila, N_processos);
+    atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
+    ordenarFila_maiorPrioridade(fila, N_processos, processos);
+    
+
+    while(fila[0] != -1  && existeTrabalho(processos,N_processos)){
+        atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
+        ordenarFila_maiorPrioridade(fila, N_processos, processos);
+        if(fila[0] != prox_processo && prox_processo != -1){
+           /* printf("%d - %d\n",  prox_processo, fila[0]);*/
+            (*escalonador).trocas_Contexto++;
+        }
+        prox_processo = fila[0];
+        /*printf("cara da fila = %d\n", fila[0]);*/
+
+        if(processos[prox_processo].temp_inicio_exec == -1){
+            processos[prox_processo].temp_inicio_exec = (*escalonador).tempo_Total;
+        }
+
+        if((processos[prox_processo].temp_exec - processos[prox_processo].temp_run) <= 1){
+            (*escalonador).tempo_Total++;
+            processos[prox_processo].temp_fim_exec = (*escalonador).tempo_Total;
+            processos[prox_processo].temp_run += processos[prox_processo].temp_exec;
+            processos[prox_processo].executado = true;
+
+            (*escalonador).Tt += processos[prox_processo].temp_fim_exec - processos[prox_processo].temp_ingresso;
+            (*escalonador).Tw += processos[prox_processo].temp_fim_exec - processos[prox_processo].temp_ingresso - processos[prox_processo].temp_exec;
+            removerFila(fila, N_processos);
+        }else{
+            processos[prox_processo].temp_run += 1;
+            (*escalonador).tempo_Total ++;
+        }
+
+    }
+
+    (*escalonador).Tt = (*escalonador).Tt/N_processos;
+    (*escalonador).Tw = (*escalonador).Tw/N_processos;
+
+}
+
+void escalonamento_PRIOd(processo *processos, int N_processos, escalonamento *escalonador){
 
 }
