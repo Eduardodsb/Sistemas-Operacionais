@@ -48,6 +48,7 @@ bool pertencerFila(int *fila, int tam, int processo); /*Verifica se um processo 
 void ordenarFila_menorTempExec(int *fila, int tam, processo *processos); /*Ordena os processos da fila pelo tempo de execução (Do menor para o maior).*/
 void ordenarFila_menorTempExecRestante(int *fila, int tam, processo *processos); /*Ordena os processos da fila pelo tempo restante de execução (Do menor para o maior).*/
 void ordenarFila_maiorPrioridade(int *fila, int N_processos, processo *processos); /*Ordena os processos da fila pela ordem de prioridade (Da maior pra a menor).*/
+void ordenarFila_maiorPrioridadeDinamica(int *fila, int N_processos, processo *processos); /*Ordena os processos da fila pela ordem de prioridade dinâmica (Da maior para a menor*/
 
 void escalonamento_FCFS(processo *processos, int N_processos, escalonamento *escalonador);
 void escalonamento_RR(processo *processos, int N_processos, escalonamento *escalonador);
@@ -171,7 +172,7 @@ void resetProcessos(processo *processos, int N_processos){
         processos[i].temp_inicio_exec = -1;
         processos[i].temp_fim_exec = -1;
         processos[i].temp_run = 0;
-        processos[i].prioridade_dinamica = 0;
+        processos[i].prioridade_dinamica = processos[i].prioridade;
     }
 }
 
@@ -300,36 +301,63 @@ void ordenarFila_maiorPrioridade(int *fila, int N_processos, processo *processos
     }
 }
 
+void ordenarFila_maiorPrioridadeDinamica(int *fila, int N_processos, processo *processos){
+        int i, j, temp, numProcessos = 0;
+    while(fila[numProcessos] != -1){
+        numProcessos++;
+    }
+
+    for(i=0; i<numProcessos-1; i++){
+        for(j=0; j<numProcessos-i-1; j++){
+            if(processos[fila[j]].prioridade_dinamica < processos[fila[j+1]].prioridade_dinamica){
+                temp = fila[j];
+                fila[j] = fila[j+1];
+                fila[j+1] = temp;
+            }
+        }
+    }
+}
+
 
 void escalonamento_FCFS(processo *processos, int N_processos, escalonamento *escalonador){
-    int prox_processo;
-    int fila[N_processos];
+    int prox_processo = -1, fila[N_processos], intervalo_temp = 1; /*Intervalo_temp representa o intervalo em que o sistema vai verificar o possível surgimento de um novo processo e adicionar na fila*/
 
     inicializarFila(fila, N_processos);
     atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
 
     while(fila[0] != -1 && existeTrabalho(processos,N_processos)){ /*Enquanto a fila não estiver vázia e ainda existir processos para ser realizado.*/
         atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total); /*tempo_total é usado também como uma linha do tempo.*/
+        if(fila[0] != prox_processo && prox_processo != -1){ /*Verifica se houve troca de contexto.*/
+            (*escalonador).trocas_Contexto++;
+        }
         prox_processo = fila[0];
 
-        processos[prox_processo].temp_inicio_exec = (*escalonador).tempo_Total;
-        processos[prox_processo].temp_fim_exec = processos[prox_processo].temp_inicio_exec + processos[prox_processo].temp_exec;
+        if(processos[prox_processo].temp_inicio_exec == -1){
+            processos[prox_processo].temp_inicio_exec = (*escalonador).tempo_Total;
+        }
 
-        (*escalonador).Tt += processos[prox_processo].temp_fim_exec  - processos[prox_processo].temp_ingresso;
-        (*escalonador).Tw += processos[prox_processo].temp_fim_exec - processos[prox_processo].temp_ingresso - processos[prox_processo].temp_exec;
-        (*escalonador).tempo_Total += processos[prox_processo].temp_exec;
-        processos[prox_processo].executado = true;
-        removerFila(fila, N_processos);
+        if((processos[prox_processo].temp_exec - processos[prox_processo].temp_run) <= intervalo_temp){
+            (*escalonador).tempo_Total += intervalo_temp;
+            processos[prox_processo].temp_fim_exec = (*escalonador).tempo_Total;
+            processos[prox_processo].temp_run += processos[prox_processo].temp_exec;
+            processos[prox_processo].executado = true;
+
+            (*escalonador).Tt += processos[prox_processo].temp_fim_exec - processos[prox_processo].temp_ingresso;
+            (*escalonador).Tw += processos[prox_processo].temp_fim_exec - processos[prox_processo].temp_ingresso - processos[prox_processo].temp_exec;
+            removerFila(fila, N_processos);
+        }else{
+            processos[prox_processo].temp_run += intervalo_temp;
+            (*escalonador).tempo_Total += intervalo_temp;
+        }
     }
 
     (*escalonador).Tt = (*escalonador).Tt/N_processos;
     (*escalonador).Tw = (*escalonador).Tw/N_processos;
-    (*escalonador).trocas_Contexto = N_processos - 1;
 
 }
 
 void escalonamento_RR(processo *processos, int N_processos, escalonamento *escalonador){
-    int prox_processo;
+    int prox_processo = -1;
     int tq = 2;
     int fila[N_processos];
 
@@ -338,8 +366,11 @@ void escalonamento_RR(processo *processos, int N_processos, escalonamento *escal
 
     while(fila[0] != -1  && existeTrabalho(processos,N_processos)){ /*Enquanto a fila não estiver vázia e ainda existir processos para ser realizado.*/
         atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total); /*tempo_total é usado também como uma linha do tempo.*/
+        if(fila[0] != prox_processo && prox_processo != -1){ /*Verifica se houve troca de contexto.*/
+            (*escalonador).trocas_Contexto++;
+        }
         prox_processo = fila[0];
-       /* printf("cara da fila = %d\n", fila[0]);*/
+        
         if(processos[prox_processo].temp_inicio_exec == -1){
             processos[prox_processo].temp_inicio_exec = (*escalonador).tempo_Total;
         }
@@ -351,12 +382,10 @@ void escalonamento_RR(processo *processos, int N_processos, escalonamento *escal
 
             (*escalonador).Tt += processos[prox_processo].temp_fim_exec - processos[prox_processo].temp_ingresso;
             (*escalonador).Tw += processos[prox_processo].temp_fim_exec - processos[prox_processo].temp_ingresso - processos[prox_processo].temp_exec;
-            (*escalonador).trocas_Contexto++;
             removerFila(fila, N_processos);
         }else{
             processos[prox_processo].temp_run += tq;
             (*escalonador).tempo_Total += tq;
-            (*escalonador).trocas_Contexto++;
             atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
             removerFila(fila, N_processos);
             incluirFila(fila, N_processos, prox_processo);
@@ -366,44 +395,54 @@ void escalonamento_RR(processo *processos, int N_processos, escalonamento *escal
 
     (*escalonador).Tt = (*escalonador).Tt/N_processos;
     (*escalonador).Tw = (*escalonador).Tw/N_processos;
-    (*escalonador).trocas_Contexto--; /*Compensar a saída do último processo que não é considerada uma troca de contexto.*/   
-
 }
 
 void escalonamento_SJF(processo *processos, int N_processos, escalonamento *escalonador){
-    int prox_processo;
-    int fila[N_processos];
+    int prox_processo = -1, fila[N_processos], intervalo_temp = 1; /*Intervalo_temp representa o intervalo em que o sistema vai verificar o possível surgimento de um novo processo e adicionar na fila*/
+
 
     inicializarFila(fila, N_processos);
     atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
     ordenarFila_menorTempExec(fila, N_processos, processos);
 
     while(fila[0] != -1  && existeTrabalho(processos,N_processos)){ /*Enquanto a fila não estiver vázia e ainda existir processos para ser realizado.*/
-        atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total); /*tempo_total é usado também como uma linha do tempo.*/
-        ordenarFila_menorTempExec(fila, N_processos, processos);
         prox_processo = fila[0];
        
-        processos[prox_processo].temp_inicio_exec = (*escalonador).tempo_Total;  
-        processos[prox_processo].temp_fim_exec = processos[prox_processo].temp_inicio_exec + processos[prox_processo].temp_exec;
+        if(processos[prox_processo].temp_inicio_exec == -1){
+            processos[prox_processo].temp_inicio_exec = (*escalonador).tempo_Total;
+        }
 
+        if((processos[prox_processo].temp_exec - processos[prox_processo].temp_run) <= intervalo_temp){
+            (*escalonador).tempo_Total += intervalo_temp;
+            processos[prox_processo].temp_fim_exec = (*escalonador).tempo_Total;
+            processos[prox_processo].temp_run += processos[prox_processo].temp_exec;
+            processos[prox_processo].executado = true;
 
-        (*escalonador).Tt += processos[prox_processo].temp_fim_exec - processos[prox_processo].temp_ingresso;
-        (*escalonador).Tw += processos[prox_processo].temp_inicio_exec - processos[prox_processo].temp_ingresso;
-        (*escalonador).tempo_Total += processos[prox_processo].temp_exec;
-        (*escalonador).trocas_Contexto++; 
-        processos[prox_processo].executado = true;
-        removerFila(fila, N_processos);
+            (*escalonador).Tt += processos[prox_processo].temp_fim_exec - processos[prox_processo].temp_ingresso;
+            (*escalonador).Tw += processos[prox_processo].temp_fim_exec - processos[prox_processo].temp_ingresso - processos[prox_processo].temp_exec;
+            removerFila(fila, N_processos);
 
+            atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
+            ordenarFila_menorTempExec(fila, N_processos, processos);
+            if(fila[0] != prox_processo && prox_processo != -1 && fila[0] != -1){
+                (*escalonador).trocas_Contexto++;
+            }
+
+        }else{
+            processos[prox_processo].temp_run += intervalo_temp;
+            (*escalonador).tempo_Total += intervalo_temp;
+            atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
+        }
 
     }
 
     (*escalonador).Tt = (*escalonador).Tt/N_processos;
     (*escalonador).Tw = (*escalonador).Tw/N_processos;
-    (*escalonador).trocas_Contexto--; /*Compensar a saída do último processo que não é considerada uma troca de contexto.*/    
 }
 
 void escalonamento_SRTF(processo *processos, int N_processos, escalonamento *escalonador){
-    int prox_processo = -1 , fila[N_processos];
+    int prox_processo = -1 , fila[N_processos], intervalo_temp = 1; /*Intervalo_temp representa o intervalo em que o sistema vai verificar o possível surgimento de um novo processo e adicionar na fila*/
+
 
     inicializarFila(fila, N_processos);
     atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
@@ -421,8 +460,8 @@ void escalonamento_SRTF(processo *processos, int N_processos, escalonamento *esc
             processos[prox_processo].temp_inicio_exec = (*escalonador).tempo_Total;
         }
 
-        if((processos[prox_processo].temp_exec - processos[prox_processo].temp_run) <= 1){
-            (*escalonador).tempo_Total++;
+        if((processos[prox_processo].temp_exec - processos[prox_processo].temp_run) <= intervalo_temp){
+            (*escalonador).tempo_Total += intervalo_temp;
             processos[prox_processo].temp_fim_exec = (*escalonador).tempo_Total;
             processos[prox_processo].temp_run += processos[prox_processo].temp_exec;
             processos[prox_processo].executado = true;
@@ -431,8 +470,8 @@ void escalonamento_SRTF(processo *processos, int N_processos, escalonamento *esc
             (*escalonador).Tw += processos[prox_processo].temp_fim_exec - processos[prox_processo].temp_ingresso - processos[prox_processo].temp_exec;
             removerFila(fila, N_processos);
         }else{
-            processos[prox_processo].temp_run += 1;
-            (*escalonador).tempo_Total ++;
+            processos[prox_processo].temp_run += intervalo_temp;
+            (*escalonador).tempo_Total += intervalo_temp;
         }
 
     }
@@ -443,37 +482,50 @@ void escalonamento_SRTF(processo *processos, int N_processos, escalonamento *esc
 }
 
 void escalonamento_PRIOc(processo *processos, int N_processos, escalonamento *escalonador){
-    int prox_processo, fila[N_processos];
+    int prox_processo = -1, fila[N_processos], intervalo_temp = 1;
 
     inicializarFila(fila, N_processos);
     atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
     ordenarFila_maiorPrioridade(fila, N_processos, processos);
 
     while(fila[0] != -1  && existeTrabalho(processos,N_processos)){
-        atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
-        ordenarFila_maiorPrioridade(fila, N_processos, processos);
         prox_processo = fila[0];
         
-        processos[prox_processo].temp_inicio_exec = (*escalonador).tempo_Total;  
-        processos[prox_processo].temp_fim_exec = processos[prox_processo].temp_inicio_exec + processos[prox_processo].temp_exec;
+        if(processos[prox_processo].temp_inicio_exec == -1){
+            processos[prox_processo].temp_inicio_exec = (*escalonador).tempo_Total;
+        }
 
-        (*escalonador).Tt += processos[prox_processo].temp_fim_exec - processos[prox_processo].temp_ingresso;
-        (*escalonador).Tw += processos[prox_processo].temp_inicio_exec - processos[prox_processo].temp_ingresso;
-        (*escalonador).tempo_Total += processos[prox_processo].temp_exec;
-        (*escalonador).trocas_Contexto++; 
-        processos[prox_processo].executado = true;
-        removerFila(fila, N_processos);
+        if((processos[prox_processo].temp_exec - processos[prox_processo].temp_run) <= intervalo_temp){
+            (*escalonador).tempo_Total += intervalo_temp;
+            processos[prox_processo].temp_fim_exec = (*escalonador).tempo_Total;
+            processos[prox_processo].temp_run += processos[prox_processo].temp_exec;
+            processos[prox_processo].executado = true;
+
+            (*escalonador).Tt += processos[prox_processo].temp_fim_exec - processos[prox_processo].temp_ingresso;
+            (*escalonador).Tw += processos[prox_processo].temp_fim_exec - processos[prox_processo].temp_ingresso - processos[prox_processo].temp_exec;
+            removerFila(fila, N_processos);
+
+            atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
+            ordenarFila_maiorPrioridade(fila, N_processos, processos);
+            if(fila[0] != prox_processo && prox_processo != -1 && fila[0] != -1){
+                (*escalonador).trocas_Contexto++;
+            }
+
+        }else{
+            processos[prox_processo].temp_run += intervalo_temp;
+            (*escalonador).tempo_Total += intervalo_temp;
+            atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
+        }
 
     }
 
     (*escalonador).Tt = (*escalonador).Tt/N_processos;
-    (*escalonador).Tw = (*escalonador).Tw/N_processos;  
-    (*escalonador).trocas_Contexto--; /*Compensar a saída do último processo que não é considerada uma troca de contexto.*/
+    (*escalonador).Tw = (*escalonador).Tw/N_processos;    
 
 }
 
 void escalonamento_PRIOp(processo *processos, int N_processos, escalonamento *escalonador){
-    int prox_processo = -1, fila[N_processos];
+    int prox_processo = -1, fila[N_processos], intervalo_temp = 1;
 
     inicializarFila(fila, N_processos);
     atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
@@ -484,18 +536,16 @@ void escalonamento_PRIOp(processo *processos, int N_processos, escalonamento *es
         atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
         ordenarFila_maiorPrioridade(fila, N_processos, processos);
         if(fila[0] != prox_processo && prox_processo != -1){
-           /* printf("%d - %d\n",  prox_processo, fila[0]);*/
             (*escalonador).trocas_Contexto++;
         }
         prox_processo = fila[0];
-        /*printf("cara da fila = %d\n", fila[0]);*/
 
         if(processos[prox_processo].temp_inicio_exec == -1){
             processos[prox_processo].temp_inicio_exec = (*escalonador).tempo_Total;
         }
 
-        if((processos[prox_processo].temp_exec - processos[prox_processo].temp_run) <= 1){
-            (*escalonador).tempo_Total++;
+        if((processos[prox_processo].temp_exec - processos[prox_processo].temp_run) <= intervalo_temp){
+            (*escalonador).tempo_Total += intervalo_temp;
             processos[prox_processo].temp_fim_exec = (*escalonador).tempo_Total;
             processos[prox_processo].temp_run += processos[prox_processo].temp_exec;
             processos[prox_processo].executado = true;
@@ -504,17 +554,65 @@ void escalonamento_PRIOp(processo *processos, int N_processos, escalonamento *es
             (*escalonador).Tw += processos[prox_processo].temp_fim_exec - processos[prox_processo].temp_ingresso - processos[prox_processo].temp_exec;
             removerFila(fila, N_processos);
         }else{
-            processos[prox_processo].temp_run += 1;
-            (*escalonador).tempo_Total ++;
+            processos[prox_processo].temp_run += intervalo_temp;
+            (*escalonador).tempo_Total += intervalo_temp;
         }
 
     }
 
     (*escalonador).Tt = (*escalonador).Tt/N_processos;
     (*escalonador).Tw = (*escalonador).Tw/N_processos;
-
 }
 
 void escalonamento_PRIOd(processo *processos, int N_processos, escalonamento *escalonador){
+    int prox_processo = 0, fila[N_processos], intervalo_temp = 1, fator_evelhecimento = 1;
+    int i;
 
+    inicializarFila(fila, N_processos);
+    atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
+
+    while(fila[0] != -1  && existeTrabalho(processos,N_processos)){
+        atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
+        ordenarFila_maiorPrioridadeDinamica(fila, N_processos, processos);
+        if(fila[0] != prox_processo && prox_processo != -1){
+           /* printf("%d - %d\n",  prox_processo, fila[0]);*/
+            (*escalonador).trocas_Contexto++;
+        }
+
+        printf("pfila (%d) = %d e pprox ((%d)) = %d\n", fila[0], processos[fila[0]].prioridade_dinamica, prox_processo, processos[prox_processo].prioridade_dinamica );
+        if(processos[fila[0]].prioridade_dinamica != processos[prox_processo].prioridade_dinamica){
+            prox_processo = fila[0];
+        }
+
+        processos[prox_processo].prioridade_dinamica = processos[prox_processo].prioridade;
+        printf("cara da fila = %d\n", prox_processo);
+
+        if(processos[prox_processo].temp_inicio_exec == -1){
+            processos[prox_processo].temp_inicio_exec = (*escalonador).tempo_Total;
+        }
+
+        if((processos[prox_processo].temp_exec - processos[prox_processo].temp_run) <= intervalo_temp){
+            (*escalonador).tempo_Total += intervalo_temp;
+            processos[prox_processo].temp_fim_exec = (*escalonador).tempo_Total;
+            processos[prox_processo].temp_run += processos[prox_processo].temp_exec;
+            processos[prox_processo].executado = true;
+
+            (*escalonador).Tt += processos[prox_processo].temp_fim_exec - processos[prox_processo].temp_ingresso;
+            (*escalonador).Tw += processos[prox_processo].temp_fim_exec - processos[prox_processo].temp_ingresso - processos[prox_processo].temp_exec;
+            removerFila(fila, N_processos);
+        }else{
+            processos[prox_processo].temp_run += intervalo_temp;
+            (*escalonador).tempo_Total += intervalo_temp;
+        }
+        
+        for(i = 0; i<N_processos; i++){ /*Aumentar a prioridade dinâmica*/
+            if(processos[i].executado == false && i != prox_processo){
+                processos[i].prioridade_dinamica += fator_evelhecimento;
+            }
+        }
+
+    }
+
+    (*escalonador).Tt = (*escalonador).Tt/N_processos;
+    (*escalonador).Tw = (*escalonador).Tw/N_processos;
 }
