@@ -565,7 +565,7 @@ void escalonamento_PRIOp(processo *processos, int N_processos, escalonamento *es
 }
 
 void escalonamento_PRIOd(processo *processos, int N_processos, escalonamento *escalonador){
-    int prox_processo = 0, fila[N_processos], intervalo_temp = 1, fator_evelhecimento = 1;
+    int prox_processo = -1, fila[N_processos], intervalo_temp = 1, fator_evelhecimento = 1;
     int i;
 
     inicializarFila(fila, N_processos);
@@ -574,14 +574,23 @@ void escalonamento_PRIOd(processo *processos, int N_processos, escalonamento *es
     while(fila[0] != -1  && existeTrabalho(processos,N_processos)){
         atualizarFila(processos, fila, N_processos, (*escalonador).tempo_Total);
         ordenarFila_maiorPrioridadeDinamica(fila, N_processos, processos);
-        if(fila[0] != prox_processo && prox_processo != -1){
-           /* printf("%d - %d\n",  prox_processo, fila[0]);*/
-            (*escalonador).trocas_Contexto++;
-        }
 
-        printf("pfila (%d) = %d e pprox ((%d)) = %d\n", fila[0], processos[fila[0]].prioridade_dinamica, prox_processo, processos[prox_processo].prioridade_dinamica );
-        if(processos[fila[0]].prioridade_dinamica != processos[prox_processo].prioridade_dinamica){
+       /* printf("pfila (%d) = %d e pprox ((%d)) = %d\n", fila[0], processos[fila[0]].prioridade_dinamica, prox_processo, processos[prox_processo].prioridade_dinamica );*/
+        if(prox_processo == -1 || (processos[fila[0]].prioridade_dinamica > processos[prox_processo].prioridade_dinamica && !processos[prox_processo].executado)){ /*Caso a prioridade dinâmica do primeiro da fila seja igual a  do processo já em execução, não haverar troca de conbtexto*/
+            if(fila[0] != prox_processo && prox_processo != -1){
+                printf("%d - %d\n",  prox_processo, fila[0]);
+                (*escalonador).trocas_Contexto++;
+            } 
             prox_processo = fila[0];
+        }else if(prox_processo != -1 && processos[prox_processo].executado){
+            if(fila[0] != prox_processo && prox_processo != -1){
+                printf("%d - %d\n",  prox_processo, fila[0]);
+                (*escalonador).trocas_Contexto++;
+            } 
+            prox_processo = fila[0];
+        }else{
+            puts("oiee");
+            fila[0] = prox_processo;
         }
 
         processos[prox_processo].prioridade_dinamica = processos[prox_processo].prioridade;
@@ -598,15 +607,18 @@ void escalonamento_PRIOd(processo *processos, int N_processos, escalonamento *es
             processos[prox_processo].executado = true;
 
             (*escalonador).Tt += processos[prox_processo].temp_fim_exec - processos[prox_processo].temp_ingresso;
+            printf("Tt processo = %d - %d >> %f\n", prox_processo, fila[0] ,(processos[prox_processo].temp_fim_exec - processos[prox_processo].temp_ingresso));
             (*escalonador).Tw += processos[prox_processo].temp_fim_exec - processos[prox_processo].temp_ingresso - processos[prox_processo].temp_exec;
+            printf("Tw processo = %d - %d >> %f\n", prox_processo, fila[0], (processos[prox_processo].temp_fim_exec - processos[prox_processo].temp_ingresso - processos[prox_processo].temp_exec));
             removerFila(fila, N_processos);
+          /*  printf("quem é %d", fila[0]);*/
         }else{
             processos[prox_processo].temp_run += intervalo_temp;
             (*escalonador).tempo_Total += intervalo_temp;
         }
         
         for(i = 0; i<N_processos; i++){ /*Aumentar a prioridade dinâmica*/
-            if(processos[i].executado == false && i != prox_processo){
+            if(processos[i].executado == false && i != prox_processo && pertencerFila(fila, N_processos, i)){
                 processos[i].prioridade_dinamica += fator_evelhecimento;
             }
         }
