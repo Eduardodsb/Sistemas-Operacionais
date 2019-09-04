@@ -1,10 +1,4 @@
 /*
-Nome: Eduardo da Silva Barbosa
-DRE: 116150432
----------Trabalho 1--------------
-*/
-
-/*
 compilação: gcc -o Trab1 Trab1.c -ansi -Wall
 */
 
@@ -38,12 +32,12 @@ void imprimeProcessos(processo *processos, int N_processos); /*Imprime a tabela 
 void resetProcessos(processo *processos, int N_processos); /*Reseta as variáveis de todos os processos. OBS: as variáveis com informação lida do arquivo de entrada é mantida.*/
 bool existeTrabalho(processo *processos, int N_processos); /*Verifica se ainda existe processo que não tenha sido executado*/
 void inicializaEscalonamentos(escalonamento *escalonadores); /*Inicializa a estrutura que define cada tipo de escalonamento.*/
-void imprimeEscalonamentos(escalonamento *escalonadores); /*Imprime o resultado de todos os tipos de escalonamentos.*/
+void imprimeEscalonamentos(escalonamento escalonadores); /*Imprime o resultado do escalonamento.*/
 
 void inicializarFila(int *fila, int tam); /*Inicializa a fila que guardará a ordem dos processos com -1.*/
 void incluirFila(int *fila, int tam, int processo); /*Inclui o processo no final da fila.*/
 void removerFila(int *fila, int tam); /*Remove o primeiro processo da fila.*/
-bool atualizarFila(processo *Processos, int *fila, int tam, int temp); /*Atualiza a fila com todos os processos que tenha surgido e não executado até o tempo temp. OBS: Todos os processos são incluidos no final da fila.*/ 
+bool atualizarFila(processo *Processos, int *fila, int tam, int temp); /*Atualiza a fila com todos os processos que tenha surgido e não executado até o tempo temp, retornando false caso nenhum processo novo seja incluido ou true caso contrário. OBS: Todos os processos são incluidos no final da fila.*/ 
 bool pertencerFila(int *fila, int tam, int processo); /*Verifica se um processo já pertence a fila.*/
 void ordenarFila_menorTempExec(int *fila, int tam, processo *processos); /*Ordena os processos da fila pelo tempo de execução (Do menor para o maior).*/
 void ordenarFila_menorTempExecRestante(int *fila, int tam, processo *processos); /*Ordena os processos da fila pelo tempo restante de execução (Do menor para o maior).*/
@@ -90,8 +84,6 @@ int main(int argc, char **argv){
     
     resetProcessos(processos, total_Processos);
     escalonamento_PRIOd(processos, total_Processos, &escalonadores[6]);
-
-    imprimeEscalonamentos(escalonadores);
 
     return 0;
 }
@@ -195,15 +187,12 @@ void inicializaEscalonamentos(escalonamento *escalonadores){
     }
 }
 
-void imprimeEscalonamentos(escalonamento *escalonadores){
-    int i;
-    for(i=0; i < total_Escalonamentos; i++){
-        printf("Tempo médio Tt = %f\n",  escalonadores[i].Tt );
-        printf("Tempo médio Tw = %f\n",  escalonadores[i].Tw);
-        printf("Trocas de contexto = %d\n", escalonadores[i].trocas_Contexto);
-        printf("Tempo total = %f\n", escalonadores[i].tempo_Total);
-        printf("\n");
-    }
+void imprimeEscalonamentos(escalonamento escalonadores){
+    printf("Tempo médio Tt = %f\n",  escalonadores.Tt );
+    printf("Tempo médio Tw = %f\n",  escalonadores.Tw);
+    printf("Trocas de contexto = %d\n", escalonadores.trocas_Contexto);
+    printf("Tempo total = %f\n", escalonadores.tempo_Total);
+    printf("\n");
 }
 
 
@@ -355,7 +344,8 @@ void escalonamento_FCFS(processo *processos, int N_processos, escalonamento *esc
 
     (*escalonador).Tt = (*escalonador).Tt/N_processos;
     (*escalonador).Tw = (*escalonador).Tw/N_processos;
-
+    puts("FCFS");
+    imprimeEscalonamentos(*escalonador);
 }
 
 void escalonamento_RR(processo *processos, int N_processos, escalonamento *escalonador){
@@ -397,6 +387,8 @@ void escalonamento_RR(processo *processos, int N_processos, escalonamento *escal
 
     (*escalonador).Tt = (*escalonador).Tt/N_processos;
     (*escalonador).Tw = (*escalonador).Tw/N_processos;
+    puts("RR");
+    imprimeEscalonamentos(*escalonador);
 }
 
 void escalonamento_SJF(processo *processos, int N_processos, escalonamento *escalonador){
@@ -440,6 +432,8 @@ void escalonamento_SJF(processo *processos, int N_processos, escalonamento *esca
 
     (*escalonador).Tt = (*escalonador).Tt/N_processos;
     (*escalonador).Tw = (*escalonador).Tw/N_processos;
+    puts("SJF");
+    imprimeEscalonamentos(*escalonador);
 }
 
 void escalonamento_SRTF(processo *processos, int N_processos, escalonamento *escalonador){
@@ -480,6 +474,8 @@ void escalonamento_SRTF(processo *processos, int N_processos, escalonamento *esc
 
     (*escalonador).Tt = (*escalonador).Tt/N_processos;
     (*escalonador).Tw = (*escalonador).Tw/N_processos;
+    puts("SRTF");
+    imprimeEscalonamentos(*escalonador);
 
 }
 
@@ -522,7 +518,9 @@ void escalonamento_PRIOc(processo *processos, int N_processos, escalonamento *es
     }
 
     (*escalonador).Tt = (*escalonador).Tt/N_processos;
-    (*escalonador).Tw = (*escalonador).Tw/N_processos;    
+    (*escalonador).Tw = (*escalonador).Tw/N_processos;
+    puts("PRIOc");
+    imprimeEscalonamentos(*escalonador);    
 
 }
 
@@ -564,6 +562,8 @@ void escalonamento_PRIOp(processo *processos, int N_processos, escalonamento *es
 
     (*escalonador).Tt = (*escalonador).Tt/N_processos;
     (*escalonador).Tw = (*escalonador).Tw/N_processos;
+    puts("PRIOp");
+    imprimeEscalonamentos(*escalonador);
 }
 
 void escalonamento_PRIOd(processo *processos, int N_processos, escalonamento *escalonador){
@@ -617,4 +617,6 @@ void escalonamento_PRIOd(processo *processos, int N_processos, escalonamento *es
 
     (*escalonador).Tt = (*escalonador).Tt/N_processos;
     (*escalonador).Tw = (*escalonador).Tw/N_processos;
+    puts("PRIOd");
+    imprimeEscalonamentos(*escalonador);
 }
