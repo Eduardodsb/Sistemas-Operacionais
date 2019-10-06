@@ -1,5 +1,5 @@
 // Arquivo shmem.c: cria e usa uma área de memória compartilhada POSIX.
-// Em Linux, compile usando: cc -o shmem -lrt shmem.c
+// Em Linux, compile usando: gcc -o mem_w mem_w.c -lrt
 #include<stdio.h>
 #include<stdlib.h>
 #include<fcntl.h>

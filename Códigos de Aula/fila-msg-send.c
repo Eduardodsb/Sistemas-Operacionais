@@ -1,5 +1,5 @@
 // Arquivo mq-send.c: envia mensagens para uma fila de mensagens POSIX.
-// Em Linux, compile usando: cc -o mq-send -lrt mq-send.c
+// Em Linux, compile usando: gcc -o fila-msg-send fila-msg-send.c -lrt
 #include<stdio.h>
 #include<stdlib.h>
 #include<mqueue.h>

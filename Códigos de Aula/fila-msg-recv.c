@@ -1,5 +1,5 @@
 // Arquivo mq-recv.c: recebe mensagens de uma fila de mensagens POSIX.
-// Em Linux, compile usando: cc -o mq-recv -lrt mq-recv.c
+// Em Linux, compile usando: gcc -o fila-msg-recv fila-msg-recv.c -lrt
 #include<stdio.h>
 #include<stdlib.h>
 #include<mqueue.h>
