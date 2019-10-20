@@ -13,6 +13,7 @@ using namespace std;
 void readRefs(vector<int> &refs); /*Faz a leitura das referências e coloca no vetor passado.*/
 void printVector(vector<int> &vetor); /*Imprime o vetor passado.*/
 int find(vector<int> &vetor, int num); /*Verifica a existência de num no vetor passado. Caso encontre retorna a posição caso contrário retorna -1.*/
+int findSmaller(vector<int> &vetor); /*Retorna o indíce da posição que possui o menor conteúdo*/ 
 
 /*Algoritmos*/
 int FIFO(vector<int> &refs, vector<int> &frame, int size_frame); /*Simula o algortimo FIFO e retorna a quantidade de falhas de páginas.*/
@@ -27,7 +28,7 @@ int size_frame = 0, pageFaults_FIFO = 0, pageFaults_LRU = 0, pageFaults_OPT = 0;
         cerr << "Número de argumentos insuficiente, insira a quantidade de quadros!" << endl;
         exit(1);
     }else{
-        size_frame = *argv[1] - '0'; //Convertendo de char para inteiro (Através da tabela ASCII).
+        size_frame = atoi(argv[1]); //Convertendo de char para inteiro (Através da tabela ASCII).
     }
 
     readRefs(refs);
@@ -65,6 +66,16 @@ int find(vector<int> &vetor, int num){
     return -1;
 }
 
+int findSmaller(vector<int> &vetor){
+    int smallerIndex = 0;
+    for(unsigned int i=0; i<vetor.size(); i++){
+        if(vetor[i]<vetor[smallerIndex]){
+            smallerIndex = i;
+        }
+    }
+    return smallerIndex;
+}
+
 int FIFO(vector<int> &refs, vector<int> &frame, int size_frame){
     int pageFaults=0;
     
@@ -81,5 +92,41 @@ int FIFO(vector<int> &refs, vector<int> &frame, int size_frame){
 }
 
 int LRU(vector<int> &refs, vector<int> &frame, int size_frame){
+    int pageFaults=0, index;
+    vector<int> time;
+    
+    frame.assign(size_frame,-1);
+    time.assign(size_frame,-1);
 
+    for(unsigned int i = 0; i < refs.size(); i++){
+        index = find(frame, refs[i]);
+        if(index == -1){
+            index = findSmaller(time);
+            frame[index] = refs[i];
+            time[index] = i;
+            pageFaults++;
+        }
+        time[index] = i;
+        //printVector(frame);
+    }
+    return pageFaults;
+}
+
+int OPT(vector<int> &refs, vector<int> &frame, int size_frame){
+ int pageFaults=0, /*index = 0*/;
+     frame.assign(size_frame,-1);
+
+/*
+    for(unsigned int i = 0; i < refs.size(); i++){
+        index = find(frame, refs[i]);
+        if(index == -1){
+           // index = findSmaller(time);
+            frame[index] = refs[i];
+            pageFaults++;
+        }
+        //printVector(frame);
+    }
+*/
+
+    return pageFaults;
 }
