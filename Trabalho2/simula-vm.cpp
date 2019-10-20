@@ -113,7 +113,7 @@ int LRU(vector<int> &refs, vector<int> &frame, int size_frame){
 }
 
 int OPT(vector<int> &refs, vector<int> &frame, int size_frame){
- int pageFaults=0, /*index = 0*/;
+ int pageFaults=0/*, index = 0*/;
      frame.assign(size_frame,-1);
 
 /*
