@@ -170,7 +170,7 @@ int OPT(vector<int> &refs, vector<int> &frame, int size_frame){
             frame[index] = refs[i];
             pageFaults++;
         }
-        //cout << i << endl;
+        cout << i << endl;
         //printVector(frame);
     }
 
