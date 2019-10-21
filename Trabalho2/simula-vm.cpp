@@ -15,7 +15,7 @@ void readRefs(vector<int> &refs); /*Faz a leitura das referências e coloca no v
 void printVector(vector<int> &vetor); /*Imprime o vetor passado.*/
 int find(vector<int> &vetor, int num); /*Verifica a existência de num no vetor passado. Caso encontre retorna a posição caso contrário retorna -1.*/
 int findSmaller(vector<int> &vetor); /*Retorna o indíce da posição que possui o menor conteúdo*/ 
-int findSlower(vector<int> &refs, int position, vector<int> &frame); /*Retorna o índice que contém a página que levará mais tempo para aparecer novamente*/
+int findSlower(vector<int> &refs, int position, vector<int> frame); /*Retorna o índice que contém a página que levará mais tempo para aparecer novamente*/
 
 /*Algoritmos*/
 int FIFO(vector<int> &refs, vector<int> &frame, int size_frame); /*Simula o algortimo FIFO e retorna a quantidade de falhas de páginas.*/
@@ -78,18 +78,19 @@ int findSmaller(vector<int> &vetor){
     return smallerIndex;
 }
 
-int findSlower(vector<int> &refs, int position, vector<int> &frame){
-    int index = -1, index_frame = 0;
-
+int findSlower(vector<int> &refs, int position, vector<int> frame){
+ 
+ /*   int index_frame = 0;
+    unsigned index = 0;
     index_frame = find(frame, -1);
     if(index_frame != -1){
         return index_frame;
     }
-
+    index = 0;
     for(unsigned int i = 0; i<frame.size(); i++){
         for(unsigned int j = position+1; j<refs.size(); j++){
             if(frame[i] == refs[j]){
-                if(j > index || index == -1){
+                if(j > index){
                     index = j;
                     index_frame = i;
                 }
@@ -98,8 +99,10 @@ int findSlower(vector<int> &refs, int position, vector<int> &frame){
         }
     }
     return index_frame;
+*/
+    int index;
+    unsigned int j = 0;
 
-/*
     index = find(frame, -1);
     if(index != -1){
         return index;
@@ -112,10 +115,11 @@ int findSlower(vector<int> &refs, int position, vector<int> &frame){
             j++;
         }
     }
+
     j=0;
     while(frame[j] == -1)
         j++;
-    return j;*/
+    return j;
 }
 
 int FIFO(vector<int> &refs, vector<int> &frame, int size_frame){
@@ -166,6 +170,7 @@ int OPT(vector<int> &refs, vector<int> &frame, int size_frame){
             frame[index] = refs[i];
             pageFaults++;
         }
+        //cout << i << endl;
         //printVector(frame);
     }
 
