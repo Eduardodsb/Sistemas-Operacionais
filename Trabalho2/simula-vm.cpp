@@ -1,5 +1,5 @@
 /*
-Compilar: g++ -o simula-vm simula-vm.cpp -Wall -ansi --std=c++17
+Compilar: g++ -o simula-vm simula-vm.cpp -Wall -ansi --std=c++17 -Os
 Executar: ./simula-vm "Número de quadros" < "refs.txt"
 */
 
@@ -8,13 +8,14 @@ Executar: ./simula-vm "Número de quadros" < "refs.txt"
 #include<stdio.h>
 #include<cstdlib>
 #include<vector>
+#include <algorithm>
+#include <iterator>
 
 using namespace std;
 
-void readRefs(vector<int> &refs); /*Faz a leitura das referências e coloca no vetor passado.*/
-void printVector(vector<int> &vetor); /*Imprime o vetor passado.*/
-int find(vector<int> &vetor, int num); /*Verifica a existência de num no vetor passado. Caso encontre retorna a posição caso contrário retorna -1.*/
-int findSmaller(vector<int> &vetor); /*Retorna o indíce da posição que possui o menor conteúdo*/ 
+void readRefs(vector<int> &refs); /*Faz a leitura das referências e coloca no vetor refs.*/
+int find(vector<int> &vetor, int num); /*Verifica a existência de num no vetor passado(vetor). Caso encontre retorna a posição, caso contrário retorna -1.*/
+int findSmaller(vector<int> &vetor); /*Retorna o indíce da posição que possui o menor conteúdo. Utilizado para encontrar a página com menor tempo de entrada (mais velha).*/ 
 int findSlower(vector<int> &refs, int position, vector<int> frame); /*Retorna o índice que contém a página que levará mais tempo para aparecer novamente*/
 
 /*Algoritmos*/
@@ -26,18 +27,18 @@ int main(int argc, char *argv[]){
 vector<int> refs, frame;
 int size_frame = 0, pageFaults_FIFO = 0, pageFaults_LRU = 0, pageFaults_OPT = 0; 
 
-    if(argc < 2){ /*Verifica se foi passada a quantidade de argumentos correto.*/
+    if(argc < 2){ /*Verifica se foi passada a quantidade de argumentos correta.*/
         cerr << "Número de argumentos insuficiente, insira a quantidade de quadros!" << endl;
         exit(1);
     }else{
-        size_frame = atoi(argv[1]); //Convertendo de char para inteiro (Através da tabela ASCII).
+        size_frame = atoi(argv[1]); //Convertendo de char para inteiro.
     }
 
-    readRefs(refs);
+    readRefs(refs); //Lê as referências de entrada. 
 
-    pageFaults_FIFO = FIFO(refs, frame, size_frame);
-    pageFaults_LRU = LRU(refs, frame, size_frame);
-    pageFaults_OPT = OPT(refs, frame, size_frame);
+    pageFaults_FIFO = FIFO(refs, frame, size_frame); //Executa o algoritmo FIFO
+    pageFaults_LRU = LRU(refs, frame, size_frame); //Executa o algoritmo LRU
+    pageFaults_OPT = OPT(refs, frame, size_frame); //Executa o algoritmo OPT
 
     printf ("%5d quadros, %7d refs: FIFO: %5d PFs, LRU: %5d PFs, OPT: %5d PFs\n", size_frame, (int)refs.size(), pageFaults_FIFO, pageFaults_LRU, pageFaults_OPT);
 
@@ -53,24 +54,19 @@ void readRefs(vector<int> &refs){
     }
 }
 
-void printVector(vector<int> &vetor){
-    for(auto const i: vetor){
-        cout << i << " | ";
-    }
-    cout << endl;
-}
-
 int find(vector<int> &vetor, int num){
-    for(unsigned int i = 0; i<vetor.size(); i++){
-        if(vetor[i] == num)
-            return i;
+    vector<int>::iterator it;
+    it = find(vetor.begin(), vetor.end(), num);
+    if(it == vetor.end()){
+        return -1;
     }
-    return -1;
+    return it - vetor.begin();
+    
 }
 
 int findSmaller(vector<int> &vetor){
     int smallerIndex = 0;
-    for(unsigned int i=0; i<vetor.size(); i++){
+    for(unsigned int i=0; i<vetor.size(); i++){ //Compara dois a dois pegando sempre o menor índice. 
         if(vetor[i]<vetor[smallerIndex]){
             smallerIndex = i;
         }
@@ -79,47 +75,28 @@ int findSmaller(vector<int> &vetor){
 }
 
 int findSlower(vector<int> &refs, int position, vector<int> frame){
- 
- /* int index_frame = 0;
-    unsigned index = 0;
-    index_frame = find(frame, -1);
-    if(index_frame != -1){
-        return index_frame;
-    }
-    index = 0;
-    for(unsigned int i = 0; i<frame.size(); i++){
-        for(unsigned int j = position+1; j<refs.size(); j++){
-            if(frame[i] == refs[j]){
-                if(j > index){
-                    index = j;
-                    index_frame = i;
-                }
-                j = refs.size();
-            }
-        }
-    }
-    return index_frame;
-*/
-    int index;
-    unsigned int j = 0;
+    int index = 0;
+    unsigned aux = 0;
+    vector<int>::iterator it;
 
-    index = find(frame, -1);
+    index = find(frame, -1); //Verifica se existe posição vaga, para a página.
     if(index != -1){
         return index;
     }
 
-    for(unsigned int i = position+1; i < refs.size() && j < frame.size()-1; i++){
-        index = find(frame, refs[i]);
-        if(index != -1){
-            frame[index] = -1;
-            j++;
-        }
+    for(unsigned int i = 0; i<frame.size(); i++){ //Para cada página pertencente ao quadro(frame), é buscada sua próxima requisição nas referências.
+        it = find(refs.begin()+position+1, refs.end(), frame[i]);
+        if(it == refs.end()){ //Caso não seja encontrada, o índice da mesma é retornado, pois ela não será mais requisitada.
+            index = i;
+            i = frame.size();
+        }else{ //Caso não seja encontrada, é guardado o tempo em que a mesma irá ser requisitada e tal tempo é comparado com os das demais páginas do frame. Assim ficando com o índice da página com maior tempo.
+            if(it - refs.begin() > aux){
+                index = i;
+                aux = it - refs.begin();    
+            }
+        } 
     }
-
-    j=0;
-    while(frame[j] == -1)
-        j++;
-    return j;
+    return index;
 }
 
 int FIFO(vector<int> &refs, vector<int> &frame, int size_frame){
@@ -127,51 +104,46 @@ int FIFO(vector<int> &refs, vector<int> &frame, int size_frame){
     
     frame.assign(size_frame,-1);
 
-    for(unsigned int i = 0; i < refs.size(); i++){
-        if(find(frame, refs[i]) == -1){
-            frame[pageFaults%size_frame] = refs[i];
+    for(unsigned int i = 0; i < refs.size(); i++){ //Para cada página, pertecente a referência, é analisada a situação do frame (quadro). 
+        if(find(frame, refs[i]) == -1){ //Verifica se a página atual já está no quadro (frame). Caso não esteja é inserida.
+            frame[pageFaults%size_frame] = refs[i]; //É utilizada a ideia de módulo para inserir as páginas. OBS: A variável pageFaults é utilizada para duas ideias distintas: 1 - Falhas de página e 2 - Como indice dá próxima possição que deve ser inserida a nova página. 
             pageFaults++;
         }
-        //printVector(frame);
     }
     return pageFaults;
 }
 
 int LRU(vector<int> &refs, vector<int> &frame, int size_frame){
     int pageFaults=0, index;
-    vector<int> time;
+    vector<int> time; //time é utlizada para guardar o tempo de entrada de cada página. Obs: As páginas e seus tempos são relacionados pelo índice. 
     
     frame.assign(size_frame,-1);
     time.assign(size_frame,-1);
 
-    for(unsigned int i = 0; i < refs.size(); i++){
+    for(unsigned int i = 0; i < refs.size(); i++){ //Para cada página, pertecente a referência, é analisada a situação do frame (quadro). 
         index = find(frame, refs[i]);
-        if(index == -1){
-            index = findSmaller(time); /*Encontrar o indice de time que tem o menor valor.*/
+        if(index == -1){ //Caso a página não exista no quadro (frame), é necessário inserir.
+            index = findSmaller(time); //Encontra o índice da página que tem o menor tempo de entrada, ou seja, a mais velha.
             frame[index] = refs[i];
             time[index] = i;
             pageFaults++;
         }
         time[index] = i;
-        //printVector(frame);
     }
     return pageFaults;
 }
 
 int OPT(vector<int> &refs, vector<int> &frame, int size_frame){
- int pageFaults=0, index = 0;
-     frame.assign(size_frame,-1);
+    int pageFaults=0, index=0;
+    frame.assign(size_frame,-1);
 
-
-    for(unsigned int i = 0; i < refs.size(); i++){
+    for(unsigned int i = 0; i < refs.size(); i++){ //Para cada página, pertecente a referência, é analisada a situação do frame (quadro). 
         index = find(frame, refs[i]);
-        if(index == -1){
-            index = findSlower(refs, i, frame);
+        if(index == -1){ //Caso a página não exista no quadro (frame), é necessário inserir.
+            index = findSlower(refs, i, frame); //Encontra o índice da página que levará mais tempo para ser referênciada novamente.
             frame[index] = refs[i];
             pageFaults++;
-        }
-        cout << i << endl;
-        //printVector(frame);
+        }    
     }
 
     return pageFaults;
