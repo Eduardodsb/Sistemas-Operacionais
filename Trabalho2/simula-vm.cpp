@@ -80,7 +80,7 @@ int findSmaller(vector<int> &vetor){
 
 int findSlower(vector<int> &refs, int position, vector<int> frame){
  
- /*   int index_frame = 0;
+ /* int index_frame = 0;
     unsigned index = 0;
     index_frame = find(frame, -1);
     if(index_frame != -1){
