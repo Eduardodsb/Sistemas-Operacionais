@@ -8,8 +8,8 @@ Executar: ./simula-vm "Número de quadros" < "refs.txt"
 #include<stdio.h>
 #include<cstdlib>
 #include<vector>
-#include <algorithm>
-#include <iterator>
+#include<algorithm>
+#include<iterator>
 
 using namespace std;
 
