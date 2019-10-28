@@ -6,3 +6,6 @@ all:
 	./simula-vm 256 < vsim-gcc.txt 
 	./simula-vm 1024 < vsim-gcc.txt
 	./simula-vm 4096 < vsim-gcc.txt  
+
+clean: 
+	-rm simula-vm
